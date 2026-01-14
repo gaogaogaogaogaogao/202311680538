@@ -1,54 +1,41 @@
-#include "types.h"
-#include "elf.h"
-#include "x86.h"
-#include "memlayout.h"
+// boot/bootmain.c - xv6启动主函数
 
-// 简单的串口输出函数
+// 打印字符串到串口
 void print_str(char* str) {
   while (*str) {
-    outb(0x3F8, *str++);  // 向COM1串口发送字符
+    // 向COM1串口输出字符
+    outb(0x3F8, *str++);
   }
 }
 
-// 读取磁盘扇区的函数
-void readseg(uchar*, uint, uint);
-
 // 主引导函数
 void bootmain(void) {
-  // 打印进入bootmain的信息
+  // 阶段1：进入bootmain
   print_str("[BOOT] enter bootmain\r\n");
   
-  struct elfhdr *elf;
-  struct proghdr *ph, *eph;
-  void (*entry)(void);
-  uchar* pa;
-  
-  // ELF头部临时存放位置
-  elf = (struct elfhdr*)0x10000;
-  
   // 读取ELF头部
+  struct elfhdr *elf = (struct elfhdr*)0x10000;
   readseg((uchar*)elf, 4096, 0);
   
   // 检查ELF魔数
-  if(elf->magic != ELF_MAGIC) {
-    return;  // 如果不是有效的ELF文件，则返回
+  if(elf->magic != 0x464C457F) {  // 0x7F + 'E' + 'L' + 'F'
+    return;  // 不是有效ELF文件
   }
   
-  // 打印ELF头部加载完成
+  // 阶段2：ELF头部加载完成
   print_str("[BOOT] elf header loaded\r\n");
   
-  // 加载每个程序段
-  ph = (struct proghdr*)((uchar*)elf + elf->phoff);
-  eph = ph + elf->phnum;
+  // 加载程序段到内存
+  struct proghdr *ph = (struct proghdr*)((uchar*)elf + elf->phoff);
+  struct proghdr *eph = ph + elf->phnum;
   for(; ph < eph; ph++) {
-    pa = (uchar*)ph->p_pa;
-    readseg(pa, ph->p_memsz, ph->p_offset);
+    readseg((uchar*)ph->p_pa, ph->p_memsz, ph->p_offset);
   }
   
-  // 打印内核加载完成
+  // 阶段3：内核加载完成
   print_str("[BOOT] kernel loaded\r\n");
   
   // 跳转到内核入口点
-  entry = (void(*)(void))(elf->entry);
-  entry();
+  void (*entry)(void) = (void(*)(void))(elf->entry);
+  entry();  // 进入内核
 }
