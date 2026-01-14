@@ -1,57 +1,37 @@
 # xv6 启动流程实践报告
 
-## 学号：202311680538
-## 姓名：[你的名字]
+**学号：202311680538**  
+**姓名：高欣雨**  
+**班级：23计1**
 
-## 一、启动流程分析
+## 一、已完成的修改
 
-### 1. BIOS阶段
-- CPU从0xFFFF0开始执行BIOS固件代码
-- BIOS进行硬件自检（POST）
-- 加载主引导记录（MBR）到内存0x7C00处
+### 1. 代码注释
+- boot/bootasm.S：添加详细中文注释，解释实模式到保护模式转换
+- boot/bootmain.c：添加中文注释，解释ELF文件加载过程
+- kernel/entry.S：添加中文注释，解释内核入口设置
 
-### 2. Bootloader阶段
-- **bootasm.S**（实模式）：
-  - 关中断（cli）
-  - 清空段寄存器
-  - 启用A20地址线
-  - 加载全局描述符表（GDT）
-  - 切换到保护模式
-  - 设置栈指针，跳转到bootmain
+### 2. 启动可视化
+- boot/bootmain.c：添加3个打印语句：
+  - `[BOOT] enter bootmain`
+  - `[BOOT] elf header loaded`
+  - `[BOOT] kernel loaded`
+- kernel/main.c：添加1个打印语句：
+  - `[KERNEL] main() started`
 
-- **bootmain.c**（保护模式）：
-  - 读取ELF文件头部
-  - 验证魔数（0x7F + 'ELF'）
-  - 加载程序段到内存0x100000处
-  - 跳转到内核入口点
+## 二、xv6启动流程
 
-### 3. 内核初始化阶段
-- **entry.S**：
-  - 设置栈指针（esp = 0x8000）
-  - 清除eflags寄存器
-  - 调用main函数
+1. **BIOS阶段**：加载MBR到0x7C00
+2. **bootasm.S**：实模式初始化→启用A20→进入保护模式
+3. **bootmain.c**：读取ELF头部→验证魔数→加载内核
+4. **entry.S**：设置栈指针→跳转到main()
+5. **main.c**：初始化内核→启动第一个进程
 
-- **main.c**：
-  - 初始化控制台
-  - 初始化内存管理
-  - 初始化页表
-  - 初始化中断
-  - 启动第一个进程
+## 三、提交记录
+1. 第一次提交：创建README.md
+2. 第二次提交：添加bootasm.S
+3. 第三次提交：添加bootmain.c
+4. 第四次提交：添加entry.S和main.c
 
-## 二、关键代码修改
-
-### 1. 添加启动信息输出
-在 `boot/bootmain.c` 中添加：
-```c
-void print_str(char* str) {
-    while (*str) {
-        outb(0x3F8, *str++);
-    }
-}
-
-void bootmain(void) {
-    print_str("[BOOT] enter bootmain\r\n");
-    // ... 原有代码
-    print_str("[BOOT] elf header loaded\r\n");
-    print_str("[BOOT] kernel loaded\r\n");
-}
+## 四、学习总结
+理解了x86启动流程、ELF文件格式、操作系统初始化过程。
