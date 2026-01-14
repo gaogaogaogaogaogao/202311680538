@@ -1,4 +1,4 @@
-# boot/bootasm.S - xv6启动汇编代码
+# boot/bootasm.S - xv6启动汇编代码 
 
 # 启动入口点，BIOS加载到0x7C00处
 .globl start
